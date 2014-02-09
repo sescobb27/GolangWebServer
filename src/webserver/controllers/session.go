@@ -51,8 +51,6 @@ func InitializeSessionManager(providerName, cookieName string) (*SessionManager,
 	s_mng := &SessionManager{provider: pder,
 		cookieName:  cookieName,
 		maxlifetime: 604800}
-	fmt.Println("provider in s_mng: ", pder)
-	fmt.Println("s_mng: ", s_mng)
 	return s_mng, nil
 }
 
@@ -66,8 +64,6 @@ func RegisterProvider(p_name string, provider Provider) {
 	if _, dup := providers[p_name]; dup {
 		panic("session: Register called twice for provide " + p_name)
 	}
-	fmt.Printf("Registering: %s\n", p_name)
-	fmt.Println("provider: ", provider)
 	providers[p_name] = provider
 }
 
@@ -116,8 +112,6 @@ func (s_mng *SessionManager) SessionStart(w http.ResponseWriter, r *http.Request
 }
 
 func (s_mng *SessionManager) GC() {
-	fmt.Println(s_mng)
-	fmt.Println(s_mng.provider)
 	s_mng.provider.SessionGC()
 	time.AfterFunc(time.Duration(s_mng.maxlifetime)*time.Second, func() { s_mng.GC() })
 }
