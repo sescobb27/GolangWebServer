@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 	"webserver/controllers"
 	"webserver/dbconnection"
@@ -29,33 +28,19 @@ func init() {
 }
 
 func IndexPageHandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()                 // parse arguments, you have to call this by yourself
-	fmt.Println("form: ", r.Form) // print form information in server side
-	fmt.Println("path: ", r.URL.Path)
-	fmt.Println("scheme: ", r.URL.Scheme)
-	fmt.Println(r.Form["url_long"])
-	fmt.Println("host: ", r.Host)
-	fmt.Println("header: ", r.Header)
-	fmt.Println("method: ", r.Method)
-	fmt.Println("requestUri: ", r.URL.RequestURI())
-	fmt.Println("requestUri: ", r.URL.String())
-	fmt.Println("rawQuery: ", r.URL.RawQuery)
-	fmt.Println("urlHost: ", r.URL.Host)
-	fmt.Println("urlFragment: ", r.URL.Fragment)
-	fmt.Println("urlScheme: ", r.URL.Scheme)
-	for k, v := range r.Form {
-		fmt.Println("key:", k)
-		fmt.Println("val:", strings.Join(v, ""))
-	}
-	fmt.Fprintf(w, "Hello From Golang")
 }
 
 func AboutPageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ShowUploadsHanlder(w http.ResponseWriter, r *http.Request) {
-	session := sessionManager.SessionStart(w, r)
-
+	// session := sessionManager.SessionStart(w, r)
+	if r.Method == "GET" {
+		file_arr, _ := dbconnection.GetUsersFiles(10, 0)
+		w.Header().Set("Content-Type", "text/html")
+		t, _ := template.ParseFiles("template/showfiles.gtpl")
+		t.Execute(w, file_arr)
+	}
 }
 
 func LoginPageHandler(w http.ResponseWriter, r *http.Request) {
@@ -72,13 +57,13 @@ func LoginPageHandler(w http.ResponseWriter, r *http.Request) {
 		user := &models.User{Username: &username,
 			Password: &password,
 		}
-		session.Set("username", username)
 		id, err := dbconnection.VerifyUser(user)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		fmt.Println("user id: ", id)
+		session.Set("id", id)
+		session.Set("username", username)
 		http.Redirect(w, r, "/upload", http.StatusFound)
 	default:
 		fmt.Println("Error on Method: ", r.Method)
@@ -115,7 +100,8 @@ func UploadPageHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "%v", handler.Header)
 
 		var file *os.File
-		file_name := "images/" + handler.Filename
+		pwd, _ := os.Getwd()
+		file_name := pwd + "/images/" + handler.Filename
 		file, err = os.OpenFile(file_name, os.O_WRONLY|os.O_CREATE, 0666)
 		if err != nil {
 			fmt.Println(err)
@@ -144,9 +130,9 @@ func SignUpPageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case "GET":
-		t, _ := template.ParseFiles("template/login.gtpl")
+		t, _ := template.ParseFiles("template/signup.gtpl")
 		w.Header().Set("Content-Type", "text/html")
-		t.Execute(w, nil)
+		t.Execute(w, "")
 	case "POST":
 		r.ParseForm()
 		username := r.Form.Get("username")
