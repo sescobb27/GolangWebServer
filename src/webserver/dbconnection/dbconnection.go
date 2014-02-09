@@ -41,13 +41,13 @@ func encryptPassword(password string) string {
 	return fmt.Sprintf("%x", hash.Sum(nil))
 }
 
-func VerifyUser(user *models.User) (int, error) {
+func VerifyUser(user *models.User) (int64, error) {
 	db, err := stablishConnection()
 	if err != nil {
 		return 0, err
 	}
 	defer db.Close()
-	var user_id int
+	var user_id int64
 	err = db.QueryRow(get_user, user.Username,
 		encryptPassword(*user.Password)).Scan(&user_id)
 	switch {
@@ -111,7 +111,7 @@ func InsertUserFile(file *models.UserFile) {
 		file.UserId,
 		file.Size)
 	if err != nil {
-		panic("transaction.Exec")
+		panic("transaction.Exec " + err.Error())
 		return
 	}
 	transaction.Commit()
@@ -138,14 +138,17 @@ func GetUsersFiles(limit, offset int) ([]*models.UserFile, error) {
 		return nil, err
 	}
 
-	f_arr := make([]*models.UserFile, limit)
+	f_arr := make([]*models.UserFile, 0, limit)
+	var path, title string
 	var u_file *models.UserFile
-
 	for rows.Next() {
-		if err = rows.Scan(u_file); err != nil {
+		if err = rows.Scan(&title, &path); err != nil {
 			panic(err)
 		}
-		f_arr = append(f_arr, u_file)
+		if path != "" && title != "" {
+			u_file = &models.UserFile{Path: path, Title: title}
+			f_arr = append(f_arr, u_file)
+		}
 	}
 	return f_arr, nil
 }
