@@ -16,9 +16,9 @@ const (
 	db_name           string = "webserver"
 	connection_format string = "user=%s dbname=%s sslmode=disable password=%s host=%s"
 	get_user          string = "SELECT _id FROM users WHERE username=$1 AND password_hash=$2"
-	insert_user       string = "INSERT INTO users (username, password_hash, created_at) VALUES ($1,$2,$3)"
-	insert_user_file  string = "INSERT INTO users_files (title, path, user_id, size) VALUES ($1,$2,$3,$4)"
-	get_user_file     string = "SELECT title, path FROM users_files LIMIT $1 OFFSET $2"
+	insert_user       string = "INSERT INTO users (username, password_hash, created_at) VALUES ($1,$2,$3) RETURNING _id"
+	insert_user_file  string = "INSERT INTO users_files (title, path, user_id, size, category) VALUES ($1,$2,$3,$4,$5)"
+	get_user_file     string = "SELECT title, path FROM users_files WHERE category = $1 LIMIT $2 OFFSET $3"
 )
 
 func stablishConnection() (*sql.DB, error) {
@@ -74,17 +74,17 @@ func InsertUser(user *models.User, callback func(int64)) error {
 		return err
 	}
 
-	var result sql.Result
-	result, err = transaction.Exec(insert_user, user.Username,
-		encryptPassword(*user.Password), time.Now())
+	var id int64
+	err = transaction.QueryRow(insert_user, user.Username,
+		encryptPassword(*user.Password), time.Now()).Scan(&id)
 	if err != nil {
 		println("transaction.Exec")
 		return err
 	}
+
 	transaction.Commit()
 
 	if callback != nil {
-		id, _ := result.LastInsertId()
 		callback(id)
 	}
 
@@ -109,19 +109,22 @@ func InsertUserFile(file *models.UserFile) {
 		file.Title,
 		file.Path,
 		file.UserId,
-		file.Size)
+		file.Size,
+		file.Category)
 	if err != nil {
 		panic("transaction.Exec " + err.Error())
 		return
 	}
 	transaction.Commit()
+
 }
 
-func GetUsersFiles(limit, offset int) ([]*models.UserFile, error) {
+func GetUsersFiles(limit, offset int, category string) ([]*models.UserFile, error) {
 	db, err := stablishConnection()
 	if err != nil {
 		return nil, err
 	}
+
 	if limit <= 0 {
 		limit = 10
 	}
@@ -130,9 +133,13 @@ func GetUsersFiles(limit, offset int) ([]*models.UserFile, error) {
 		offset = 0
 	}
 
+	if category == "" {
+		category = "animals"
+	}
+
 	defer db.Close()
 	var rows *sql.Rows
-	rows, err = db.Query(get_user_file, limit, offset)
+	rows, err = db.Query(get_user_file, category, limit, offset)
 
 	if err != nil {
 		return nil, err

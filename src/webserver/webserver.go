@@ -28,6 +28,12 @@ func init() {
 }
 
 func IndexPageHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		r.ParseForm()
+		w.Header().Set("Content-Type", "text/html")
+		t, _ := template.ParseFiles("template/index.gtpl")
+		t.Execute(w, nil)
+	}
 }
 
 func AboutPageHandler(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +42,8 @@ func AboutPageHandler(w http.ResponseWriter, r *http.Request) {
 func ShowUploadsHanlder(w http.ResponseWriter, r *http.Request) {
 	// session := sessionManager.SessionStart(w, r)
 	if r.Method == "GET" {
-		file_arr, _ := dbconnection.GetUsersFiles(10, 0)
+		fmt.Println(r.Form.Get("category"))
+		file_arr, _ := dbconnection.GetUsersFiles(10, 0, r.Form.Get("category"))
 		w.Header().Set("Content-Type", "text/html")
 		t, _ := template.ParseFiles("template/showfiles.gtpl")
 		t.Execute(w, file_arr)
@@ -97,7 +104,7 @@ func UploadPageHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer formfile.Close()
 		title := r.Form.Get("title")
-		fmt.Fprintf(w, "%v", handler.Header)
+		category := r.Form.Get("categories")
 
 		var file *os.File
 		pwd, _ := os.Getwd()
@@ -113,10 +120,12 @@ func UploadPageHandler(w http.ResponseWriter, r *http.Request) {
 
 		info, _ := file.Stat()
 		user_file := &models.UserFile{Title: title,
-			Path:   file.Name(),
-			UserId: session.Get("id").(int64),
-			Size:   info.Size()}
+			Path:     "/images/" + handler.Filename,
+			UserId:   session.Get("id").(int64),
+			Size:     info.Size(),
+			Category: category}
 		go dbconnection.InsertUserFile(user_file)
+		http.Redirect(w, r, "/show", http.StatusOK)
 	default:
 		fmt.Println("Error on Method: ", r.Method)
 	}
@@ -161,6 +170,7 @@ func SignUpPageHandler(w http.ResponseWriter, r *http.Request) {
 
 		callback := func(uid int64) {
 			session.Set("id", uid)
+			fmt.Println(uid)
 		}
 		err = dbconnection.InsertUser(user, callback)
 		if err != nil {
