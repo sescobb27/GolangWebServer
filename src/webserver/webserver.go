@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 	"webserver/controllers"
 	"webserver/dbconnection"
@@ -42,16 +43,29 @@ func AboutPageHandler(w http.ResponseWriter, r *http.Request) {
 func ShowUploadsHanlder(w http.ResponseWriter, r *http.Request) {
 	// session := sessionManager.SessionStart(w, r)
 	if r.Method == "GET" {
-		fmt.Println(r.Form.Get("category"))
-		file_arr, _ := dbconnection.GetUsersFiles(10, 0, r.Form.Get("category"))
+		r.ParseForm()
+		file_arr, _ := dbconnection.GetUsersFiles(10, 0, r.Form.Get("tag"))
 		w.Header().Set("Content-Type", "text/html")
 		t, _ := template.ParseFiles("template/showfiles.gtpl")
 		t.Execute(w, file_arr)
 	}
 }
 
+func SearchPageHanlder(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		w.Header().Set("Content-Type", "text/html")
+		tags := dbconnection.GetTags()
+		t, _ := template.ParseFiles("template/search.gtpl")
+		t.Execute(w, tags)
+	}
+}
+
 func LoginPageHandler(w http.ResponseWriter, r *http.Request) {
 	session := sessionManager.SessionStart(w, r)
+	if session.Get("username") != "" {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
 	switch r.Method {
 	case "GET":
 		t, _ := template.ParseFiles("template/login.gtpl")
@@ -103,8 +117,9 @@ func UploadPageHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer formfile.Close()
+
 		title := r.Form.Get("title")
-		category := r.Form.Get("categories")
+		tags := r.Form.Get("tags")
 
 		var file *os.File
 		pwd, _ := os.Getwd()
@@ -118,14 +133,20 @@ func UploadPageHandler(w http.ResponseWriter, r *http.Request) {
 		defer file.Close()
 		io.Copy(file, formfile)
 
+		temp := strings.Split(tags, ",")
+		tags_arr := make([]string, 0, len(temp))
+		for _, tag := range temp {
+			tags_arr = append(tags_arr, strings.Trim(tag, " "))
+		}
 		info, _ := file.Stat()
 		user_file := &models.UserFile{Title: title,
-			Path:     "/images/" + handler.Filename,
-			UserId:   session.Get("id").(int64),
-			Size:     info.Size(),
-			Category: category}
+			Path:   "/images/" + handler.Filename,
+			UserId: session.Get("id").(int64),
+			Size:   info.Size(),
+			Tags:   tags_arr}
 		go dbconnection.InsertUserFile(user_file)
-		http.Redirect(w, r, "/show", http.StatusOK)
+		http.Redirect(w, r, "/search", http.StatusFound)
+		return
 	default:
 		fmt.Println("Error on Method: ", r.Method)
 	}
