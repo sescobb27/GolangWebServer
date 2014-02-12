@@ -16,14 +16,11 @@
       <li> <a href="/search" class="btn" title="">Search Files</a> </li>
     </ul>
   </section>
-  <form action="/show" method="get" accept-charset="utf-8">
-    <input type="text" name="tag" placeholder="Tag Name">
-  </form>
-  {{range $i,$file := .}}
-  <div class="col-xs-6 col-md-3">
-      <h3>{{$file.Title}}</h3>
-      <img src="{{$file.Path}}" alt="{{$file.Title}}" class="img-responsive thumbnail">
-  </div>
+<form action="/show" method="get" accept-charset="utf-8">
+  {{range $i,$tag := .}}
+  <input type="submit"action="/show" method="get" name="tag" value="{{$tag}}" placeholder="" class="btn btn-info">
   {{end}}
+  <input type="text" name="tag" placeholder="Tag Name">
+</form>
 </body>
 </html>
