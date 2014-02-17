@@ -30,7 +30,7 @@ database:
 router:
 	${GOBUILD} ${ROUTERS}
 
-.PHONY: test open
+.PHONY: test open install
 
 test:
 	${GOTEST} ${MODELS}
@@ -39,3 +39,9 @@ test:
 
 open:
 	$(shell sudo setcap cap_net_bind_service=+ep `pwd`/start)
+
+install:
+	${GOINSTALL} ${MODELS}
+	${GOINSTALL} ${CONTROLLERS}
+	${GOINSTALL} ${DATABASE}
+	${GOINSTALL} ${ROUTERS}
