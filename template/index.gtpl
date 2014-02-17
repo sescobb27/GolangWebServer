@@ -8,13 +8,19 @@
   <link rel="stylesheet" href="/css/bootstrap.min.css">
 </head>
 <body>
-<section>
+<nav class="navbar navbar-default" role="navigation">
   <ul class="nav nav-tabs nav-justified">
     <li><a href="/login" class="btn" title="">Login</a></li>
     <li> <a href="/signup" class="btn" title="">Join Us</a></li>
     <li> <a href="/upload" class="btn" title="">Upload Files</a></li>
     <li> <a href="/search" class="btn" title="">Search Files</a> </li>
   </ul>
-</section>
+</nav>
+<div class="jumbotron">
+  <h1>Welcome!!</h1>
+  <div class="container">
+    <a href="/upload" class="btn" title="">Upload Files</a>
+  </div>
+</div>
 </body>
 </html>

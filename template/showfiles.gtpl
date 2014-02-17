@@ -8,22 +8,24 @@
   <link rel="stylesheet" href="/css/bootstrap.min.css">
 </head>
 <body>
-  <section>
+  <nav class="navbar navbar-default" role="navigation">
     <ul class="nav nav-tabs nav-justified">
       <li><a href="/login" class="btn" title="">Login</a></li>
       <li> <a href="/signup" class="btn" title="">Join Us</a></li>
       <li> <a href="/upload" class="btn" title="">Upload Files</a></li>
       <li> <a href="/search" class="btn" title="">Search Files</a> </li>
     </ul>
-  </section>
-  <form action="/show" method="get" accept-charset="utf-8">
-    <input type="text" name="tag" placeholder="Tag Name">
-  </form>
-  {{range $i,$file := .}}
-  <div class="col-xs-6 col-md-3">
-      <h3>{{$file.Title}}</h3>
-      <img src="{{$file.Path}}" alt="{{$file.Title}}" class="img-responsive thumbnail">
+  </nav>
+  <div class="container">
+    <form action="/show" method="get" accept-charset="utf-8">
+      <input type="text" name="tag" placeholder="Tag Name">
+    </form>
+    {{range $i,$file := .}}
+    <div class="col-xs-6 col-md-3">
+        <h3>{{$file.Title}}</h3>
+        <img src="{{$file.Path}}" alt="{{$file.Title}}" class="img-responsive thumbnail">
+    </div>
+    {{end}}
   </div>
-  {{end}}
 </body>
 </html>
