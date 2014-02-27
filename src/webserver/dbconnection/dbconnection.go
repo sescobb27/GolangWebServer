@@ -102,8 +102,8 @@ func InsertUserFile(file *models.UserFile) {
 	assertNoError(err)
 
 	getTags := make(chan map[string]int64)
-	var tags map[string]int64
 	go func() {
+	  var tags map[string]int64
 		tags = getTagsAsObjects()
 		// send tags via channel for continue
 		getTags <- tags
@@ -125,7 +125,7 @@ func InsertUserFile(file *models.UserFile) {
 	transaction.Commit()
 
 	// wait for all the tags
-	<-getTags
+	tags := <-getTags
 	fmt.Println(tags)
 
 label:
